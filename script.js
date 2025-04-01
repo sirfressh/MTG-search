@@ -3,27 +3,35 @@ let currentPrintIndex = 0;
 let currentCardData = null;
 
 async function searchCard(cardName = null) {
-  const name = cardName || document.getElementById("cardInput").value;
-  const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
-  const data = await response.json();
+  const name = cardName || document.getElementById("cardInput").value.trim();
 
-  if (data.object === 'error') {
-    document.getElementById("cardInfo").innerHTML = `<p>Card not found. Try a different name.</p>`;
-    return;
+  if (!name) return;
+
+  try {
+    const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
+    const data = await response.json();
+
+    if (data.object === 'error') {
+      document.getElementById("cardInfo").innerHTML = `<p>Card not found. Try a different name.</p>`;
+      return;
+    }
+
+    currentCardData = data;
+
+    // Fetch alternate printings
+    const printsResponse = await fetch(data.prints_search_uri);
+    const printsData = await printsResponse.json();
+
+    printImages = printsData.data
+      .filter(card => card.image_uris?.normal)
+      .map(card => card.image_uris.normal);
+
+    currentPrintIndex = 0;
+    displayCard();
+  } catch (error) {
+    console.error("Error fetching card:", error);
+    document.getElementById("cardInfo").innerHTML = `<p>Something went wrong. Try again later.</p>`;
   }
-
-  currentCardData = data;
-
-  // Fetch alternate printings
-  const printsResponse = await fetch(data.prints_search_uri);
-  const printsData = await printsResponse.json();
-
-  printImages = printsData.data
-    .filter(card => card.image_uris?.normal)
-    .map(card => card.image_uris.normal);
-
-  currentPrintIndex = 0;
-  displayCard();
 }
 
 function displayCard() {
@@ -74,21 +82,25 @@ async function getSuggestions() {
     return;
   }
 
-  const response = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
-  const data = await response.json();
+  try {
+    const response = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
 
-  suggestionsDiv.innerHTML = '';
+    suggestionsDiv.innerHTML = '';
 
-  if (data.data && data.data.length) {
-    data.data.forEach(name => {
-      const option = document.createElement("div");
-      option.textContent = name;
-      option.onclick = () => {
-        document.getElementById("cardInput").value = name;
-        suggestionsDiv.innerHTML = '';
-        searchCard(name);
-      };
-      suggestionsDiv.appendChild(option);
-    });
+    if (data.data && data.data.length) {
+      data.data.forEach(name => {
+        const option = document.createElement("div");
+        option.textContent = name;
+        option.onclick = () => {
+          document.getElementById("cardInput").value = name;
+          suggestionsDiv.innerHTML = '';
+          searchCard(name);
+        };
+        suggestionsDiv.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error("Autocomplete error:", error);
   }
 }
