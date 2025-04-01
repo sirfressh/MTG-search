@@ -14,8 +14,8 @@ async function searchCard(cardName = null) {
     <p><strong>Type:</strong> ${data.type_line}</p>
     <p><strong>Text:</strong> ${data.oracle_text || ''}</p>
     <a href="${data.scryfall_uri}" target="_blank">View on Scryfall</a>
-    <a href="https://edhrec.com/cards/${data.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
-      Find deck ideas on EDHREC
+    <a href="https://edhrec.com/commanders/${data.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
+      See commander page on EDHREC
     </a>
     <a href="https://commanderspellbook.com/?q=${encodeURIComponent(data.name)}" target="_blank">
       Find combos on Commander Spellbook
