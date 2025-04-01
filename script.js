@@ -1,52 +1,16 @@
-let printImages = [];
-let currentPrintIndex = 0;
-let currentCardData = null;
-
 async function searchCard(cardName = null) {
-  const name = cardName || document.getElementById("cardInput").value.trim();
+  const name = cardName || document.getElementById("cardInput").value;
+  const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
+  const data = await response.json();
 
-  if (!name) return;
-
-  try {
-    const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
-    const data = await response.json();
-
-    if (data.object === 'error') {
-      document.getElementById("cardInfo").innerHTML = `<p>Card not found. Try a different name.</p>`;
-      return;
-    }
-
-    currentCardData = data;
-
-    // Fetch alternate printings
-    const printsResponse = await fetch(data.prints_search_uri);
-    const printsData = await printsResponse.json();
-
-    printImages = printsData.data
-      .filter(card => card.image_uris?.normal)
-      .map(card => card.image_uris.normal);
-
-    currentPrintIndex = 0;
-    displayCard();
-  } catch (error) {
-    console.error("Error fetching card:", error);
-    document.getElementById("cardInfo").innerHTML = `<p>Something went wrong. Try again later.</p>`;
+  if (data.object === 'error') {
+    document.getElementById("cardInfo").innerHTML = `<p>Card not found. Try a different name.</p>`;
+    return;
   }
-}
-
-function displayCard() {
-  const data = currentCardData;
-  const imageUrl = printImages[currentPrintIndex] || '';
 
   document.getElementById("cardInfo").innerHTML = `
     <h2>${data.name}</h2>
-    <div style="position: relative; text-align: center;">
-      <img id="cardImage" src="${imageUrl}" alt="${data.name}" />
-      <div style="margin-top: 10px;">
-        <button onclick="prevPrint()">⬅️</button>
-        <button onclick="nextPrint()">➡️</button>
-      </div>
-    </div>
+    <img src="${data.image_uris?.normal || ''}" alt="${data.name}" />
     <p><strong>Type:</strong> ${data.type_line}</p>
     <p><strong>Text:</strong> ${data.oracle_text || ''}</p>
     <a href="${data.scryfall_uri}" target="_blank">View on Scryfall</a>
@@ -57,20 +21,7 @@ function displayCard() {
       Find combos on Commander Spellbook
     </a>
   `;
-}
-
-function prevPrint() {
-  if (printImages.length > 1) {
-    currentPrintIndex = (currentPrintIndex - 1 + printImages.length) % printImages.length;
-    document.getElementById("cardImage").src = printImages[currentPrintIndex];
-  }
-}
-
-function nextPrint() {
-  if (printImages.length > 1) {
-    currentPrintIndex = (currentPrintIndex + 1) % printImages.length;
-    document.getElementById("cardImage").src = printImages[currentPrintIndex];
-  }
+  document.getElementById("suggestions").innerHTML = '';
 }
 
 async function getSuggestions() {
@@ -82,25 +33,21 @@ async function getSuggestions() {
     return;
   }
 
-  try {
-    const response = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
-    const data = await response.json();
+  const response = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
+  const data = await response.json();
 
-    suggestionsDiv.innerHTML = '';
+  suggestionsDiv.innerHTML = '';
 
-    if (data.data && data.data.length) {
-      data.data.forEach(name => {
-        const option = document.createElement("div");
-        option.textContent = name;
-        option.onclick = () => {
-          document.getElementById("cardInput").value = name;
-          suggestionsDiv.innerHTML = '';
-          searchCard(name);
-        };
-        suggestionsDiv.appendChild(option);
-      });
-    }
-  } catch (error) {
-    console.error("Autocomplete error:", error);
+  if (data.data && data.data.length) {
+    data.data.forEach(name => {
+      const option = document.createElement("div");
+      option.textContent = name;
+      option.onclick = () => {
+        document.getElementById("cardInput").value = name;
+        suggestionsDiv.innerHTML = '';
+        searchCard(name);
+      };
+      suggestionsDiv.appendChild(option);
+    });
   }
 }
