@@ -102,4 +102,21 @@ a {
 
 a:hover {
   color: #ffffff;
+
+}
+  
+/* Thumbnail styles for alternate printings */
+.thumb {
+  width: 50px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.thumb:hover {
+  transform: scale(1.1);
+  border: 2px solid #ffcc00;
+}
+
 }
