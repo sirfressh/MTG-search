@@ -9,14 +9,22 @@
 </head>
 <body>
   <h1>MTG Card Search</h1>
+
   <div class="search-container">
-    <input type="text" id="cardInput" placeholder="Enter card name..." oninput="getSuggestions()">
+    <input 
+      type="text" 
+      id="cardInput" 
+      placeholder="Enter card name..." 
+      oninput="getSuggestions()"
+      autocomplete="off"
+    />
     <div id="suggestions"></div>
   </div>
+
   <button onclick="searchCard()">Search</button>
+
   <div id="cardInfo"></div>
 
   <script src="script.js"></script>
 </body>
 </html>
-
