@@ -1,5 +1,6 @@
 let printImages = [];
 let currentPrintIndex = 0;
+let currentCardData = null;
 
 async function searchCard(cardName = null) {
   const name = cardName || document.getElementById("cardInput").value;
@@ -11,6 +12,8 @@ async function searchCard(cardName = null) {
     return;
   }
 
+  currentCardData = data;
+
   // Fetch alternate printings
   const printsResponse = await fetch(data.prints_search_uri);
   const printsData = await printsResponse.json();
@@ -20,11 +23,13 @@ async function searchCard(cardName = null) {
     .map(card => card.image_uris.normal);
 
   currentPrintIndex = 0;
-  displayCard(data);
+  displayCard();
 }
 
-function displayCard(data) {
+function displayCard() {
+  const data = currentCardData;
   const imageUrl = printImages[currentPrintIndex] || '';
+
   document.getElementById("cardInfo").innerHTML = `
     <h2>${data.name}</h2>
     <div style="position: relative; text-align: center;">
@@ -49,4 +54,41 @@ function displayCard(data) {
 function prevPrint() {
   if (printImages.length > 1) {
     currentPrintIndex = (currentPrintIndex - 1 + printImages.length) % printImages.length;
-    document.getElementById("cardImage").src = printImages[current
+    document.getElementById("cardImage").src = printImages[currentPrintIndex];
+  }
+}
+
+function nextPrint() {
+  if (printImages.length > 1) {
+    currentPrintIndex = (currentPrintIndex + 1) % printImages.length;
+    document.getElementById("cardImage").src = printImages[currentPrintIndex];
+  }
+}
+
+async function getSuggestions() {
+  const query = document.getElementById("cardInput").value;
+  const suggestionsDiv = document.getElementById("suggestions");
+
+  if (!query.trim()) {
+    suggestionsDiv.innerHTML = '';
+    return;
+  }
+
+  const response = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
+  const data = await response.json();
+
+  suggestionsDiv.innerHTML = '';
+
+  if (data.data && data.data.length) {
+    data.data.forEach(name => {
+      const option = document.createElement("div");
+      option.textContent = name;
+      option.onclick = () => {
+        document.getElementById("cardInput").value = name;
+        suggestionsDiv.innerHTML = '';
+        searchCard(name);
+      };
+      suggestionsDiv.appendChild(option);
+    });
+  }
+}
